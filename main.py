@@ -11,6 +11,8 @@ import shutil
 import time
 import asyncio
 
+import cv2
+import numpy as np
 
 class Plugin:
     # A normal method. It can be called from JavaScript using call_plugin_function("method_1", argument1, argument2)
@@ -37,6 +39,16 @@ class Plugin:
                             / (str(int(time.time())) + ".png")
                         )
                         path.parent.mkdir(parents=True, exist_ok=True)
+                        
+                        img = cv2.imread(png_path)
+                        gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+                        _,thresh = cv2.threshold(gray,1,255,cv2.THRESH_BINARY)
+
+                        contours,hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+                        cnt = contours[0]
+                        x,y,w,h = cv2.boundingRect(cnt)
+                        crop = img[y:y+h,x:x+w]
+                        cv2.imwrite(png_path, crop)                        
                         shutil.copy(png_path, path)
                         shutil.copy(png_path, self._dump_folder / "most_recent.jpg")
                         os.unlink(png_path)
